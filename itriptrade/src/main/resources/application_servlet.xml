@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/aop
+         http://www.springframework.org/schema/aop/spring-aop.xsd
+         http://www.springframework.org/schema/mvc
+         http://www.springframework.org/schema/mvc/spring-mvc.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/tx
+         http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <context:component-scan base-package="com.Controller,com.Dao,com.Pojo,com.Service"></context:component-scan>
+    <context:component-scan base-package="com.Swagger" />
+    <mvc:default-servlet-handler />
+    <!-- mvc:annotation-driven默认情况下会创建并注册一个默认的DefaultAnnotationHandlerMapping和一个AnnotationMethodHandlerAdapter实例,并且还会注册
+    一个默认的ConversionService实例:FormattingConversionServiceFactoryBean -->
+    <mvc:annotation-driven ><!-- 扫描注解实现处理器 --> <!-- mvc:annotation-driven会有自动注册一个默认的ConversionService以满足大部分类型转换需求 这里conversion-service="myConverService"表示覆盖默认ConversionService设置自定义转换器 -->
+        <mvc:message-converters>  <!-- 装配消息转换器 解决返回的json中文乱码问题 spring默认的消息转换器使用的是ISO-8859-1-->
+            <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                <property name="supportedMediaTypes"> <!-- 指定媒体类型为application/json;charset=UTF-8 -->
+                    <list>
+                        <value>application/json;charset=UTF-8</value>
+                        <value>text/html;charset=UTF-8</value>
+                    </list>
+                </property>
+            </bean>
+            <!-- 在纯粹解决json中文乱码上FastJsonHttpMessageConverter是StringHttpMessageConverter的升级版 既能解决乱码又能解决时间戳显示问题 注：该实例能解决的是返回bean的时间戳问题 对于使用JSONArray转换成json字符串的时间戳无能为力 只能使用@JsonField注解转换时间格式-->
+            <bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter" > <!-- 配置FastJson的消息转换器 解决返回的bean里面时间类型的值是时间戳的问题 注:返回的bean在经过spring传递时里面的时间类型会被转换成时间戳 而返回JSONArray转换成json的字符串时因为在转json字符串的时候就被转成时间戳了,轮到spring传递时就已经是一个时间戳本实例就转换不了-->
+                <property name="supportedMediaTypes"> <!-- 指定媒体类型 可以有多个类型 -->
+                    <list>
+                        <value>text/html;charset=UTF-8</value>
+                        <value>application/json</value>
+                    </list>
+                </property>
+                <property name="features">   <!-- 指定输出时的日期转换器WriteDateUseDateFormat 按照FastJson默认的日期格式进行转换输出 默认日期格式为:yyyy-MM-dd HH:mm:ss -->
+                    <list>
+                        <value>WriteDateUseDateFormat</value>  <!--即配置 <value>WriteDateUseDateFormat</value> 也配置了属性注解@JSONField(format="yyyy-MM-dd")则会优先使用注解的格式-->
+                    </list>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+
+    <!--<mvc:resources location="/statics/" mapping="/statics/**" />-->
+
+    <!--  视图解析器   -->
+     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+            <property name="prefix" value="/jsp/"></property>
+            <property name="suffix" value=".jsp"></property>
+    </bean>
+
+       <!-- <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver" > &lt;!&ndash; 配置多视图解析器 &ndash;&gt;
+        <property name="favorParameter" value="true"></property>     &lt;!&ndash; 值默认为true则表示支持参数匹配,可以根据请求参数的值确定MIME类型,默认的请求参数为format 就是说开启了参数匹配可以根据后置如.json、.html来匹配下面相应的响应类型，也可以根据参数来匹配相应的响应类型 如:/user?id=&format=json  &ndash;&gt;
+        <property name="defaultContentType" value="text/html"></property>
+        <property name="mediaTypes"> &lt;!&ndash; 根据请求参数值和MIME类型的映射列表,即contentType以何种格式来展示，若请求URL中的后缀为".json",则会以application/json的格式进行数据的展示 &ndash;&gt;
+            <map>
+                <entry key="html" value="text/html;charset=UTF-8"></entry>
+                <entry key="json" value="application/json;charset=UTF-8"></entry>
+                <entry key="xml" value="application/json;charset=UTF-8"></entry>
+            </map>
+        </property>
+        <property name="viewResolvers"> &lt;!&ndash; 表示网页视图解析器，由于只学了jsp故此采用InternalResourceViewResolver进行视图解析 &ndash;&gt;
+            <list>
+                <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+                    <property name="prefix" value="/jsp/"></property>
+                    <property name="suffix" value=".jsp"></property>
+                </bean>
+            </list>
+        </property>
+    </bean>-->
+
+    <!--<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver"> &lt;!&ndash; 全局异常处理 &ndash;&gt;
+        <property name="exceptionMappings">
+            <props>
+                <prop key="java.lang.Exception">login/login</prop>  &lt;!&ndash; 这里的/login/login指逻辑视图名  在login.jsp页码使用el表达式${exception.message}进行异常信息展示 作用域是requestScope &ndash;&gt;
+            </props>
+        </property>
+    </bean>-->
+
+
+    <!-- 配置MultipartResolver,用于上传文件,使用spring的CommonsMultipartResolver -->
+  <!--  <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="5000000000000"></property>  &lt;!&ndash; 设置上传文件大小上线，单位为字节 &ndash;&gt;
+        <property name="defaultEncoding" value="UTF-8"></property>  &lt;!&ndash; 请求的编码格式，默认为ISO-8859-1,此处设置为utf-8 (注:defaultEncoding必须和JSP的apgeEncoding设置一致,以便正确读取表单的内容) &ndash;&gt;
+    </bean>-->
+
+   <!-- <mvc:interceptors>  &lt;!&ndash; 配置拦截器 用来检查sesion是否登录 可以定义多个拦截器 &ndash;&gt;
+        <mvc:interceptor>
+            <mvc:mapping path="/appInfo/**"  />   &lt;!&ndash; 表示映射的路径 拦截/user/下所有的路径 &ndash;&gt;
+            <bean class="com.cn.Utils.SysInterceptor" />    &lt;!&ndash; 自己编写的拦截器类 编写拦截的具体操作 &ndash;&gt;
+        </mvc:interceptor>
+    </mvc:interceptors>-->
+
+</beans>

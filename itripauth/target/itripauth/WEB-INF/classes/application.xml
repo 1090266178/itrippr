@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/aop
+         http://www.springframework.org/schema/aop/spring-aop.xsd
+         http://www.springframework.org/schema/mvc
+         http://www.springframework.org/schema/mvc/spring-mvc.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/tx
+         http://www.springframework.org/schema/tx/spring-tx.xsd">
+        <bean id ="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean" >
+        <property name="dataSource" ref="dataSource" ></property>       <!-- 配置数据源 -->
+        <property name="configLocation" value="classpath:mybatisConfig.xml"></property>   <!-- 引入mabatis核心配置文件 -->
+        <property name="mapperLocations">   <!-- 在使用MapperScannerConfigurer时会扫描所有的接口 会根据接口自动注册MapperFactoryBean并且接口和xml名称要一致接口方法被xml全部实现还要在同一路径下,MapperFactoryBeanMapperFactoryBean就会自动匹配该接口对应的xml  那么这里的mapperLocations就可以不写了 写了也没事~ -->
+            <list>
+                <value>classpath:Mapper/*.xml</value>    <!-- 扫描com/cn/Dao下的包含所有子包的后缀名为.xml的文件 -->
+            </list>
+        </property>
+        <!-- <property name="typeAliasesPackage" value="com.cn.Service"></property> --> <!-- 在没配mybatis核心文件情况下 给实体类起包名省略包名 -->
+    </bean>
+
+    <!-- 读取数据库配置文件 -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" >
+        <property name="location"><value>classpath:dataBase.properties</value></property>
+    </bean>
+    <!-- 配置数据源 ${}读取配置文件的值 -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="${driver}"></property>
+        <property name="url" value="${url}"></property>
+        <property name="username" value="${user}"></property>
+        <property name="password" value="${password}"></property>
+        <!-- initialSize:数据库连接池在初始化连接时，第一次就要创建的连接个数,默认为0 -->
+        <property name="initialSize" value="${initialSize}"></property>
+        <!-- maxActive:定义连接池中同时连接的最大连接数，默认连接数为8.若设置为50,则表示可以支持单机并发50左右的处理能力. -->
+        <property name="maxActive" value="${maxActive}"></property>
+        <!-- maxIdle:定义连接池中可以允许的最大空闲连接数,默认连接数为8.超过设置的空闲连接数的连接将被时放点,若设置为负数则表示不受限制. -->
+        <property name="maxIdle" value="${maxIdle}"></property>
+        <!-- minIdle:定义连接池中最小的连接数,默认连接数为0.低于该数值的连接池将会创建新的连接 -->
+        <property name="minIdle" value="${minIdle}"></property>
+        <!-- maxWait:定义最大等待连接时间，单位为ms.即当连接池中没有可用连接时,连接池需要等待的连接释放的最大时间.
+        若等待时间超过这个设置时间,则会抛出异常,若该值设置为-1,则表示无限等待下去.该值默认为无限等待.配置该数值可以
+        避免因线程池不够用而导致的请求被无限挂起和连接不可用问题. -->
+        <property name="maxWait" value="${maxWait}"></property>
+        <!-- 定义该配置项的作用时告诉连接池是否开启无用连接回收的机制，默认为false，这里要调整为true -->
+        <property name="removeAbandoned" value="${removeAbandoned}"></property>
+        <!-- 当开启了无用连接回收的机制之后，配置该配置项可以控制连接池在超出配置的时间后回收没有用的连接，这个配置默认值为300秒，建议稍微少一点，尽量快速地回收没有用的连接. -->
+        <property name="removeAbandonedTimeout" value="${removeAbandonedTimeout}"></property>
+
+        <!-- sql心跳 --><!-- 配置SQL心跳是指在效验连接的同时，解决数据库重新连接的问题，从而确保连接池中的连接时真实有效的连接 --><!-- 备注:MySql数据库默认有8小时的时间内没有连接动态(即没有请求数据),MySql会主动断掉所有连接 -->
+        <!-- 定义开启Evict的定时效验(循环效验) -->
+        <property name="testWhileIdle" value="true"></property>
+        <!-- 定义在进行borrowObject处理时，对拿到的连接是否进行效验，false为不效验，默认为false -->
+        <property name="testOnBorrow" value="false"></property>
+        <!-- 定义在returnObject时,对返回的连接是否进行效验，false为不效验，默认为false. -->
+        <property name="testOnReturn" value="false"></property>
+        <!-- 定义效验使用的SQL语句，根MySql简单通信下，效验连接是否有效。注意:该SQL语句不能太复杂,复杂的效验SQL会严重影响性能. -->
+        <property name="validationQuery" value="select 1"></property>
+        <!-- 定义Evict的时间间隔,单位为毫秒,此处设值6000，即1分钟，这个值大于0开会开启Evict. -->
+        <property name="timeBetweenEvictionRunsMillis" value="6000"></property>
+        <!-- 定义每次效验连接的数量。一般情况下，该值回合maxActive大小一样，每次可以效验所有的连接 -->
+        <property name="numTestsPerEvictionRun" value="${maxActive}"></property>
+    </bean>
+
+    <!-- 自动注入映射器MapperScannerConfigurer -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.Dao"></property>
+    </bean>
+
+
+    <!--redis 配置 开始-->
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property  name="maxActive"  value="${redis.maxActive}" />
+        <property  name="maxIdle"   value="${redis.maxIdle}" />
+        <property  name="maxWait"  value="${redis.maxWait}" />
+        <property  name="testOnBorrow"  value="true" />
+    </bean>
+    <!-- Config poolConfig, String host, int port, int timeout, String password, int database-->
+    <bean id="jedisPool" class="redis.clients.jedis.JedisPool" destroy-method="destroy" >
+        <constructor-arg ref="jedisPoolConfig"/>
+        <constructor-arg value="${redis.host}"/>
+        <constructor-arg value="${redis.port}"/>
+        <constructor-arg value="${redis.timeout}"/>
+        <constructor-arg value="${redis.pass}"/>
+        <constructor-arg value="${redis.default.db}"/>
+    </bean>
+    <bean id="redisTool" class="com.Redis.RedisTool">
+        <property name="jedisPool" ref="jedisPool"/>
+    </bean>
+
+<!--
+    <bean id="validationToken" class="cn.itrip.common.ValidationToken">
+        <property name="redisAPI" ref="redisAPI" />
+    </bean>
+-->
+
+    <bean id="mailMessage" class="org.springframework.mail.SimpleMailMessage">
+        <property name="subject" value="[i旅行]请激活您的账户" />   <!--主题-->
+        <property name="from" value="h1090266178@163.com" />     <!--发件人-->
+    </bean>
+    <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="smtp.163.com" />
+        <property name="port" value="25" />    <!--//163的端口-->
+        <property name="username" value="h1090266178@163.com" />
+        <property name="password" value="ELJWLAALXOUYITOG" />
+        <property name="defaultEncoding" value="UTF-8" />
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.smtp.auth">true</prop>     <!--开启密码验证-->
+                <prop key="mail.smtp.timeout">30*60</prop>  <!--有效时间-->
+            </props>
+        </property>
+    </bean>
+
+    <context:component-scan base-package="com.Dao,com.service"></context:component-scan>
+</beans>

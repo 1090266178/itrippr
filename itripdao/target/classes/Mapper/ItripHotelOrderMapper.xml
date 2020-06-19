@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.Dao.ItripHotelOrderMapper">
+    <insert id="addOrder" >
+        insert into itrip_hotel_order values(null,#{userId},#{orderType},#{orderNo},#{tradeNo},#{hotelId},#{hotelName},#{roomId},#{count}
+        ,timestampdiff(day,#{checkInDate},#{checkOutDate}),#{checkInDate},#{checkOutDate},#{orderStatus},#{payAmount},#{payType},#{noticePhone},#{noticeEmail},#{specialRequirement}
+        ,#{isNeedInvoice},#{invoiceType},#{invoiceHead},#{linkUserName},#{bookType},#{creationDate},#{createdBy},#{modifyDate},#{modifiedBy})
+    </insert>
+
+    <update id="updateFlushOrderStatus" >
+        update itrip_hotel_order set orderStatus=1 where orderStatus=0 and timestampdiff(second,creationDate,now())>7200
+    </update>
+
+    <update id="updateSuccessOrderStatus" >
+        update itrip_hotel_order set orderStatus=3 where orderStatus=2 and timestampdiff(second,checkOutDate,now())>=0
+    </update>
+
+
+    <update id="updateOrderStatus" >
+        update itrip_hotel_order set orderStatus=#{orderStatus},tradeNo=#{tradeNo} where orderNo = #{orderNo}
+    </update>
+</mapper>
